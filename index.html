@@ -1,1 +1,130 @@
-Index.html for comments.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disney World Ride Ranking Survey</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 40px; }
+    .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .row span.rank-label { display: inline-block; width: 30px; text-align: right; }
+    select { padding: 4px; min-width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>Disney World Ride Ranking Survey</h1>
+  <div id="surveys"></div>
+
+  <script>
+    // Define parks with accurate ride lists
+    const parks = {
+      "Magic Kingdom": [
+        "Big Thunder Mountain Railroad", "Seven Dwarfs Mine Train", "Space Mountain", "TRON Lightcycle / Run",
+        "Astro Orbiter", "The Barnstormer", "Buzz Lightyear's Space Ranger Spin", "Casey Jr. Splash 'N' Soak Station",
+        "Dumbo the Flying Elephant", "Haunted Mansion", "It's a Small World", "Jungle Cruise",
+        "Liberty Square Riverboat", "Mad Tea Party", "The Magic Carpets of Aladdin", "Main Street Vehicles",
+        "The Many Adventures of Winnie the Pooh", "Peter Pan's Flight", "Tomorrowland Transit Authority PeopleMover",
+        "Pirates of the Caribbean", "Prince Charming Regal Carrousel", "Tiana's Bayou Adventure", "Tomorrowland Speedway",
+        "Under the Sea ~ Journey of The Little Mermaid", "Walt Disney World Railroad"
+      ],
+      "EPCOT": [
+        "Frozen Ever After","Gran Fiesta Tour Starring The Three Caballeros","Journey Into Imagination With Figment",
+        "Living with the Land","Mission: SPACE","Remy’s Ratatouille Adventure","Soarin' Around the World",
+        "Spaceship Earth","Test Track","The Seas with Nemo & Friends","Guardians of the Galaxy: Cosmic Rewind"
+      ],
+      "Disney's Hollywood Studios": [
+        "Alien Swirling Saucers","Millennium Falcon: Smugglers Run","Mickey & Minnie's Runaway Railway",
+        "Rock 'n' Roller Coaster Starring Aerosmith","Slinky Dog Dash","Star Wars: Rise of the Resistance",
+        "Star Tours – The Adventures Continue","The Twilight Zone Tower of Terror","Toy Story Mania!","Muppet*Vision 3D"
+      ],
+      "Animal Kingdom": [
+        "Avatar Flight of Passage","Dinosaur","Expedition Everest","Kali River Rapids",
+        "Kilimanjaro Safaris","Na'vi River Journey","TriceraTop Spin","It's Tough to be a Bug!"
+      ]
+    };
+
+    const surveysContainer = document.getElementById('surveys');
+
+    Object.entries(parks).forEach(([parkName, rides]) => {
+      const section = document.createElement('section');
+      section.innerHTML = `<h2>${parkName}</h2>`;
+
+      // Determine max rows: top 10 or total rides if fewer
+      const maxRows = Math.min(rides.length, 10);
+      const form = document.createElement('div');
+      form.classList.add('form');
+
+      // Build static rows
+      for (let i = 1; i <= maxRows; i++) {
+        const row = document.createElement('div');
+        row.classList.add('row');
+
+        const label = document.createElement('span');
+        label.classList.add('rank-label');
+        label.textContent = i;
+
+        const select = document.createElement('select');
+        select.innerHTML = `<option value="">Select ride...</option>` +
+          rides.map(r => `<option value="${r}">${r}</option>`).join('');
+        select.classList.add('ride-select');
+
+        row.append(label, select);
+        form.appendChild(row);
+      }
+
+      section.appendChild(form);
+      surveysContainer.appendChild(section);
+    });
+
+    // Disable duplicates logic
+    document.addEventListener('change', () => {
+      const all = Array.from(document.querySelectorAll('.ride-select'));
+      const chosen = all.map(s => s.value).filter(v => v);
+
+      all.forEach(sel => {
+        sel.querySelectorAll('option').forEach(opt => opt.disabled = false);
+        chosen.forEach(val => {
+          if (sel.value !== val) {
+            const o = sel.querySelector(`option[value="${val}"]`);
+            if (o) o.disabled = true;
+          }
+        });
+      });
+    });
+  </script>
+  <!-- Export Results Button -->
+  <div style="margin-top: 20px;">
+    <button id="exportBtn">Download Survey Results</button>
+  </div>
+
+  <script>
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const rows = [];
+      document.querySelectorAll('section').forEach(section => {
+        const park = section.querySelector('h2').textContent;
+        section.querySelectorAll('.row').forEach(row => {
+          const rank = row.querySelector('.rank-label').textContent;
+          const ride = row.querySelector('.ride-select').value;
+          rows.push({ park, rank, ride });
+        });
+      });
+      // Build CSV content
+      let csv = 'Park,Rank,Ride
+';
+      rows.forEach(r => {
+        csv += `"${r.park}",${r.rank},"${r.ride}"
+`;
+      });
+      // Trigger download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'disney_survey_results.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
